@@ -1,6 +1,5 @@
 # CSA
-what CPU will do when all processes are in ready queue
-Overview
+OVERVIEW
 This program implements various CPU scheduling algorithms, allowing users to simulate and analyze the performance of different scheduling strategies. The supported scheduling algorithms include:
 
 First-Come-First-Serve (FCFS)
