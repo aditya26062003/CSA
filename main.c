@@ -133,7 +133,7 @@ void sjf(int processes[], int n, int bt[]) {
     for (int i = 0; i < n; i++)
         tat[i] = bt[i] + wt[i];
 
-    /
+
     printf("\nSJF Scheduling:\n");
     printf("Processes\tBurst time\tWaiting time\tTurnaround time\n");
 
