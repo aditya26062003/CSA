@@ -1,338 +1,339 @@
 #include <stdio.h>
 #include <limits.h>
+#include <stdlib.h>
+#include <gtk/gtk.h>
 
-void fcfs(int processes[], int n, int bt[]);
-void sjf(int processes[], int n, int bt[]);
-void RR(int processes[], int n, int bt[]);
-void srtf(int processes[], int n, int bt[]);
-void p_y(int processes[], int n, int bt[], int priority[]);
+// Define global variables for process information
+int n;
+int *AT, *BT, *WT, *TT, quantum;
 
-int main() {
-    int choice;
-    int n;
+// Function prototypes
+void sjf();
+void fcfs();
+void srtf();
+void roundRobin();
 
-    printf("Enter the number of processes: ");
-    scanf("%d", &n);
+// Callback function for "Run Scheduling" button
+void run_scheduling(GtkWidget *widget, gpointer data) {
+    // Get values from text entry widgets
+    n = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(data));
 
-    int processes[n];
-    int burst_time[n];
-    int priority[n];
+    // Allocate memory for AT, BT arrays based on the user input
+    AT = (int *)malloc(n * sizeof(int));
+    BT = (int *)malloc(n * sizeof(int));
+    WT = (int *)malloc(n * sizeof(int));
+    TT = (int *)malloc(n * sizeof(int));
 
-    printf("Enter Burst Time and Priority for each process:\n");
+    // Get quantum value from entry widget
+    GtkWidget *quantum_entry = gtk_spin_button_new_with_range(1, 100, 1);
+    quantum = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(quantum_entry));
+
+    // Get values for AT and BT from other entry widgets
     for (int i = 0; i < n; i++) {
-        printf("Enter burst time for process P%d: ", i + 1);
-        scanf("%d", &burst_time[i]);
+        // Retrieve values from other entry widgets
+        GtkWidget *process_entries = gtk_bin_get_child(GTK_BIN(data));
+        GtkWidget *process_widgets[3];
 
-        printf("Enter priority for process P%d: ", i + 1);
-        scanf("%d", &priority[i]);
+        for (int j = 0; j < 3; j++) {
+            process_widgets[j] = gtk_container_get_children(GTK_CONTAINER(process_entries))->data;
+            process_entries = g_list_next(process_entries);
+        }
 
-        processes[i] = i + 1;
+        AT[i] = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(process_widgets[1]));
+        BT[i] = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(process_widgets[2]));
     }
 
-   do{
-    printf("\nChoose Scheduling Algorithm:\n");
-    printf("1. FCFS\n");
-    printf("2. SJF\n");
-    printf("3. SRTF\n");
-    printf("4. Priority\n");
-    printf("5. RoundRobin\n");
-    printf("6. EXIT\n");
-    printf("Enter your choice (1-6): ");
-    scanf("%d", &choice);
+    // Call scheduling algorithms with updated values
+    sjf();
+    fcfs();
+    srtf();
+    roundRobin();
 
-    switch (choice) {
-        case 1:
-            fcfs(processes, n, burst_time);
-            break;
-        case 2:
-            sjf(processes, n, burst_time);
-            break;
-        case 3:
-            srtf(processes, n, burst_time);
-            break;
-        case 4:
-            p_y(processes, n, burst_time,priority);
-            break;
-        case 5:
-            RR(processes,n,burst_time);
-            break;
-        case 6:
-            printf("Exiting ...............!!!!!!!!!");
-            break;
-        default:
-            printf("Invalid choice!\n");
-            break;
-    }}while(choice!=6);
+    // Free the allocated memory
+    free(AT);
+    free(BT);
+    free(WT);
+    free(TT);
+}
+
+int main(int argc, char *argv[]) {
+    GtkWidget *window, *vbox, *label, *spin_button, *button;
+    GtkWidget *process_entries[10];  // Array to store process entry widgets
+
+    // Initialize GTK
+    gtk_init(&argc, &argv);
+
+    // Create the main window
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(window), "Scheduling Algorithms");
+    gtk_window_set_default_size(GTK_WINDOW(window), 400, 200);
+    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+
+    // Create a vertical box layout
+    vbox = gtk_vbox_new(TRUE, 5);
+    gtk_container_add(GTK_CONTAINER(window), vbox);
+
+    // Create a label
+    label = gtk_label_new("Enter the number of processes:");
+    gtk_box_pack_start(GTK_BOX(vbox), label, TRUE, TRUE, 0);
+
+    // Create a spin button for entering the number of processes
+    spin_button = gtk_spin_button_new_with_range(1, 10, 1);
+    gtk_box_pack_start(GTK_BOX(vbox), spin_button, TRUE, TRUE, 0);
+
+    // Create entry widgets for arrival time, burst time, and quantum
+    for (int i = 0; i < 10; i++) {
+        GtkWidget *process_label = gtk_label_new(g_strdup_printf("Process %d:", i + 1));
+        GtkWidget *arrival_entry = gtk_spin_button_new_with_range(0, 100, 1);
+        GtkWidget *burst_entry = gtk_spin_button_new_with_range(1, 100, 1);
+        GtkWidget *process_hbox = gtk_hbox_new(TRUE, 5);
+
+        gtk_box_pack_start(GTK_BOX(process_hbox), process_label, TRUE, TRUE, 0);
+        gtk_box_pack_start(GTK_BOX(process_hbox), arrival_entry, TRUE, TRUE, 0);
+        gtk_box_pack_start(GTK_BOX(process_hbox), burst_entry, TRUE, TRUE, 0);
+        process_entries[i] = process_hbox;
+
+        gtk_box_pack_start(GTK_BOX(vbox), process_entries[i], TRUE, TRUE, 0);
+    }
+
+    // Create a label for quantum
+    GtkWidget *quantum_label = gtk_label_new("Enter time quantum:");
+    gtk_box_pack_start(GTK_BOX(vbox), quantum_label, TRUE, TRUE, 0);
+
+    // Create a spin button for entering the quantum
+    GtkWidget *quantum_spin_button = gtk_spin_button_new_with_range(1, 100, 1);
+    gtk_box_pack_start(GTK_BOX(vbox), quantum_spin_button, TRUE, TRUE, 0);
+
+    // Create a button to run scheduling algorithms
+    button = gtk_button_new_with_label("Run Scheduling");
+    g_signal_connect(button, "clicked", G_CALLBACK(run_scheduling), spin_button);
+    gtk_box_pack_start(GTK_BOX(vbox), button, TRUE, TRUE, 0);
+
+    // Show all widgets
+    gtk_widget_show_all(window);
+
+    // Start the GTK main loop
+    gtk_main();
 
     return 0;
 }
 
+// Implement your scheduling algorithms (sjf, fcfs, srtf, roundRobin) here
+// You can use the global variables (n, AT, BT, WT, TT, quantum) to get the user input.
+
+// Note: Ensure that you handle memory allocation and deallocation appropriately to avoid memory leaks.
 
 
 
-void fcfs(int processes[], int n, int bt[]) {
-    int wt[n], tat[n], total_wt = 0, total_tat = 0;
-
-
-    wt[0] = 0;
-    for (int i = 1; i < n; i++)
-        wt[i] = bt[i - 1] + wt[i - 1];
-
-
-    for (int i = 0; i < n; i++)
-        tat[i] = bt[i] + wt[i];
-
-
-    printf("\nFCFS Scheduling:\n");
-    printf("Processes\tBurst time\tWaiting time\tTurnaround time\n");
-
-
-    for (int i = 0; i < n; i++) {
-        total_wt += wt[i];
-        total_tat += tat[i];
-        printf("P%d\t\t%d\t\t%d\t\t%d\n", processes[i], bt[i], wt[i], tat[i]);
+void fcfs()
+{
+    int burst=0,cmpl_T;
+    float Avg_WT,Avg_TT,Total=0;
+    printf("Enter number of the process\n");
+    scanf("%d",&n);
+    printf("Enter Arrival time and Burst time of the process\n");
+    printf("AT\tBT\n");
+    for(int i=0;i<n;i++)
+    {
+        scanf("%d%d",&AT[i],&BT[i]);
     }
 
+    // Logic for calculating Waiting time
+    for(int i=0;i<n;i++)
+    {
+        if(i==0)
+            WT[i]=AT[i];
+        else
+            WT[i]=burst-AT[i];
+        burst+=BT[i];
+        Total+=WT[i];
+    }
+    Avg_WT=Total/n;
 
-    float avg_wt = (float)total_wt / n;
-    float avg_tat = (float)total_tat / n;
-    printf("\nAverage waiting time = %f", avg_wt);
-    printf("\nAverage turnaround time = %f\n", avg_tat);
+    // Logic for calculating Turn around time
+    cmpl_T=0;
+    Total=0;
+    for(int i=0;i<n;i++)
+    {
+        cmpl_T+=BT[i];
+        TT[i]=cmpl_T-AT[i];
+        Total+=TT[i];
+    }
+    Avg_TT=Total/n;
+
+    // printing of outputs
+
+    printf("Process ,Waiting_time ,TurnA_time\n");
+    for(int i=0;i<n;i++)
+    {
+        printf("%d\t\t%d\t\t%d\n",i+1,WT[i],TT[i]);
+    }
+    printf("Average waiting time is : %f\n",Avg_WT);
+    printf("Average turn around time is : %f\n",Avg_TT);
 }
 
 
 
+void sjf() {
+    int burst = 0, completionTime, minBTIndex;
+    float Avg_WT, Avg_TT, Total = 0;
 
+    // Initialize arrays
+    for (int i = 0; i < n; i++) {
+        WT[i] = 0;
+        TT[i] = 0;
+    }
 
-void sjf(int processes[], int n, int bt[]) {
-    int wt[n], tat[n], total_wt = 0, total_tat = 0;
+    // Logic for SJF
+    for (int i = 0; i < n; i++) {
+        minBTIndex = i;
 
-
-    for (int i = 0; i < n - 1; i++) {
-        for (int j = 0; j < n - i - 1; j++) {
-            if (bt[j] > bt[j + 1]) {
-
-                int temp = bt[j];
-                bt[j] = bt[j + 1];
-                bt[j + 1] = temp;
-
-
-                temp = processes[j];
-                processes[j] = processes[j + 1];
-                processes[j + 1] = temp;
+        for (int j = i + 1; j < n; j++) {
+            if (BT[j] < BT[minBTIndex]) {
+                minBTIndex = j;
             }
         }
+
+        // Swap the processes to order them by burst time
+        int temp = BT[i];
+        BT[i] = BT[minBTIndex];
+        BT[minBTIndex] = temp;
+
+        temp = AT[i];
+        AT[i] = AT[minBTIndex];
+        AT[minBTIndex] = temp;
     }
 
-
-    wt[0] = 0;
-    for (int i = 1; i < n; i++)
-        wt[i] = bt[i - 1] + wt[i - 1];
-
-
-    for (int i = 0; i < n; i++)
-        tat[i] = bt[i] + wt[i];
-
-
-    printf("\nSJF Scheduling:\n");
-    printf("Processes\tBurst time\tWaiting time\tTurnaround time\n");
-
-
+    // Logic for calculating Waiting time and Turnaround time
     for (int i = 0; i < n; i++) {
-        total_wt += wt[i];
-        total_tat += tat[i];
-        printf("P%d\t\t%d\t\t%d\t\t%d\n", processes[i], bt[i], wt[i], tat[i]);
+        WT[i] = burst;
+        burst += BT[i];
+        TT[i] = burst - AT[i];
+        Total += WT[i];
     }
+    Avg_WT = Total / n;
+    Avg_TT = Total / n;
 
-    // Calculate and display average waiting time and average turnaround time
-    float avg_wt = (float)total_wt / n;
-    float avg_tat = (float)total_tat / n;
-    printf("\nAverage waiting time = %f", avg_wt);
-    printf("\nAverage turnaround time = %f\n", avg_tat);
+    // Printing of outputs
+    printf("Process\tWaiting Time\tTurnaround Time\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t\t%d\n", i + 1, WT[i], TT[i]);
+    }
+    printf("Average Waiting Time: %f\n", Avg_WT);
+    printf("Average Turnaround Time: %f\n", Avg_TT);
 }
 
+void srtf() {
+    int remainingBT[10], completionTime, time = 0, minBTIndex;
+    float Avg_WT, Avg_TT, Total_WT = 0, Total_TT = 0;
 
-
-
-
-
-
-void srtf(int processes[], int n, int bt[]) {
-    int wt[n], tat[n], remaining_time[n];
-    int time = 0;
-
-
+    // Initialize arrays
     for (int i = 0; i < n; i++) {
-        wt[i] = 0;
-        tat[i] = 0;
-        remaining_time[i] = bt[i];
+        remainingBT[i] = BT[i];
+        WT[i] = 0;
+        TT[i] = 0;
     }
 
-    int completed = 0;
+    int processesCompleted = 0;
 
-    while (completed < n) {
-        int shortest = INT_MAX;
-        int shortest_process = -1;
+    while (processesCompleted < n) {
+        minBTIndex = -1;
+        int minBT = INT_MAX;
 
-        // Find the process with the shortest remaining time at the current time
+        // Find the process with the shortest remaining burst time
         for (int i = 0; i < n; i++) {
-            if (remaining_time[i] > 0 && remaining_time[i] < shortest && time >= wt[i]) {
-                shortest = remaining_time[i];
-                shortest_process = i;
+            if (AT[i] <= time && remainingBT[i] < minBT && remainingBT[i] > 0) {
+                minBT = remainingBT[i];
+                minBTIndex = i;
             }
         }
 
-        if (shortest_process == -1) {
+        if (minBTIndex == -1) {
+            // No process is ready, move time forward
             time++;
-            continue;
-        }
+        } else {
+            // Process with the shortest remaining burst time is found
+            remainingBT[minBTIndex]--;
+            time++;
 
+            if (remainingBT[minBTIndex] == 0) {
+                // Process has completed
+                processesCompleted++;
 
-        remaining_time[shortest_process]--;
-        time++;
+                // Calculate waiting time and turnaround time
+                WT[minBTIndex] = time - AT[minBTIndex] - BT[minBTIndex];
+                TT[minBTIndex] = time - AT[minBTIndex];
 
-        if (remaining_time[shortest_process] == 0) {
-            completed++;
-            tat[shortest_process] = time;
-            wt[shortest_process] = tat[shortest_process] - bt[shortest_process];
-        }
-    }
-
-    printf("\nSRTF Scheduling:\n");
-    printf("Processes\tBurst time\tWaiting time\tTurnaround time\n");
-
-
-    for (int i = 0; i < n; i++)
-        printf("P%d\t\t%d\t\t%d\t\t%d\n", processes[i], bt[i], wt[i], tat[i]);
-
-
-    float avg_wt = 0, avg_tat = 0;
-    for (int i = 0; i < n; i++) {
-        avg_wt += wt[i];
-        avg_tat += tat[i];
-    }
-    avg_wt /= n;
-    avg_tat /= n;
-    printf("\nAverage waiting time = %f", avg_wt);
-    printf("\nAverage turnaround time = %f\n", avg_tat);
-}
-
-void p_y(int processes[], int n, int bt[], int priority[]) {
-    int wt[n], tat[n], completed[n];
-    int total_wt = 0, total_tat = 0;
-
-
-    for (int i = 0; i < n; i++)
-        completed[i] = 0;
-
-
-    for (int time = 0; time < n; time++) {
-        int highest_priority = -1;
-        int selected_process = -1;
-
-
-        for (int i = 0; i < n; i++) {
-            if (!completed[i] && priority[i] > highest_priority) {
-                highest_priority = priority[i];
-                selected_process = i;
+                // Update totals
+                Total_WT += WT[minBTIndex];
+                Total_TT += TT[minBTIndex];
             }
         }
-
-        if (selected_process == -1)
-            break;
-
-
-        completed[selected_process] = 1;
-
-
-        wt[selected_process] = time;
-        tat[selected_process] = wt[selected_process] + bt[selected_process];
-
-
-        total_wt += wt[selected_process];
-        total_tat += tat[selected_process];
     }
 
-    printf("\nPriority Scheduling:\n");
-    printf("Processes\tBurst time\tPriority\tWaiting time\tTurnaround time\n");
+    // Calculate averages
+    Avg_WT = Total_WT / n;
+    Avg_TT = Total_TT / n;
 
-
-    for (int i = 0; i < n; i++)
-        printf("P%d\t\t%d\t\t%d\t\t%d\t\t%d\n", processes[i], bt[i], priority[i], wt[i], tat[i]);
-
-
-    float avg_wt = (float)total_wt / n;
-    float avg_tat = (float)total_tat / n;
-    printf("\nAverage waiting time = %f", avg_wt);
-    printf("\nAverage turnaround time = %f\n", avg_tat);
+    // Printing of outputs
+    printf("Process\tWaiting Time\tTurnaround Time\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t\t%d\n", i + 1, WT[i], TT[i]);
+    }
+    printf("Average Waiting Time: %f\n", Avg_WT);
+    printf("Average Turnaround Time: %f\n", Avg_TT);
 }
 
-void RR(int processes[], int n, int bt[]) {
-    int wt[n], tat[n], remaining_time[n];
-    int quantum;
+void roundRobin() {
+    int remainingBT[10], time = 0, completionTime = 0;
+    float Avg_WT = 0, Avg_TT = 0, Total_WT = 0, Total_TT = 0;
 
-
-    printf("Enter the time quantum for Round Robin: ");
-    scanf("%d", &quantum);
-
-
+    // Initialize arrays
     for (int i = 0; i < n; i++) {
-        wt[i] = 0;
-        remaining_time[i] = bt[i];
+        remainingBT[i] = BT[i];
+        WT[i] = 0;
+        TT[i] = 0;
     }
 
-    int time = 0;
-    int flag;
+    int processesCompleted = 0;
 
-
-    while (1) {
-        flag = 0;
-
-
+    // Round Robin scheduling
+    while (processesCompleted < n) {
         for (int i = 0; i < n; i++) {
+            if (remainingBT[i] > 0) {
+                if (remainingBT[i] <= quantum) {
+                    time += remainingBT[i];
+                    completionTime = time;
+                    remainingBT[i] = 0;
+                    processesCompleted++;
 
-            if (remaining_time[i] > 0) {
-                flag = 1;
-                if (remaining_time[i] > quantum) {
-                    time += quantum;
-                    remaining_time[i] -= quantum;
+                    // Calculate waiting time and turnaround time
+                    WT[i] = completionTime - AT[i] - BT[i];
+                    TT[i] = completionTime - AT[i];
+
+                    // Update totals
+                    Total_WT += WT[i];
+                    Total_TT += TT[i];
                 } else {
-                    time += remaining_time[i];
-                    wt[i] = time - bt[i];
-                    remaining_time[i] = 0;
+                    time += quantum;
+                    remainingBT[i] -= quantum;
                 }
             }
         }
-
-
-        if (flag == 0)
-            break;
     }
 
+    // Calculate averages
+    Avg_WT = Total_WT / n;
+    Avg_TT = Total_TT / n;
 
-    for (int i = 0; i < n; i++)
-        tat[i] = bt[i] + wt[i];
-
-    printf("\nRound Robin Scheduling:\n");
-    printf("Processes\tBurst time\tWaiting time\tTurnaround time\n");
-
-
-    for (int i = 0; i < n; i++)
-        printf("P%d\t\t%d\t\t%d\t\t%d\n", processes[i], bt[i], wt[i], tat[i]);
-
-
-    float avg_wt = 0, avg_tat = 0;
+    // Printing of outputs
+    printf("Process\tWaiting Time\tTurnaround Time\n");
     for (int i = 0; i < n; i++) {
-        avg_wt += wt[i];
-        avg_tat += tat[i];
+        printf("%d\t%d\t\t%d\n", i + 1, WT[i], TT[i]);
     }
-    avg_wt /= n;
-    avg_tat /= n;
-    printf("\nAverage waiting time = %f", avg_wt);
-    printf("\nAverage turnaround time = %f\n", avg_tat);
+    printf("Average Waiting Time: %f\n", Avg_WT);
+    printf("Average Turnaround Time: %f\n", Avg_TT);
 }
-
-
 
 
 
