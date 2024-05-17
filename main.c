@@ -15,50 +15,18 @@ void roundRobin();
 
 // Callback function for "Run Scheduling" button
 void run_scheduling(GtkWidget *widget, gpointer data) {
-    // Get values from text entry widgets
+    // Get the number of processes from the spin button
     n = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(data));
-
-    // Allocate memory for AT, BT arrays based on the user input
-    AT = (int *)malloc(n * sizeof(int));
-    BT = (int *)malloc(n * sizeof(int));
-    WT = (int *)malloc(n * sizeof(int));
-    TT = (int *)malloc(n * sizeof(int));
-
-    // Get quantum value from entry widget
-    GtkWidget *quantum_entry = gtk_spin_button_new_with_range(1, 100, 1);
-    quantum = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(quantum_entry));
-
-    // Get values for AT and BT from other entry widgets
-    for (int i = 0; i < n; i++) {
-        // Retrieve values from other entry widgets
-        GtkWidget *process_entries = gtk_bin_get_child(GTK_BIN(data));
-        GtkWidget *process_widgets[3];
-
-        for (int j = 0; j < 3; j++) {
-            process_widgets[j] = gtk_container_get_children(GTK_CONTAINER(process_entries))->data;
-            process_entries = g_list_next(process_entries);
-        }
-
-        AT[i] = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(process_widgets[1]));
-        BT[i] = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(process_widgets[2]));
-    }
 
     // Call scheduling algorithms with updated values
     sjf();
     fcfs();
     srtf();
     roundRobin();
-
-    // Free the allocated memory
-    free(AT);
-    free(BT);
-    free(WT);
-    free(TT);
 }
 
 int main(int argc, char *argv[]) {
     GtkWidget *window, *vbox, *label, *spin_button, *button;
-    GtkWidget *process_entries[10];  // Array to store process entry widgets
 
     // Initialize GTK
     gtk_init(&argc, &argv);
@@ -81,29 +49,6 @@ int main(int argc, char *argv[]) {
     spin_button = gtk_spin_button_new_with_range(1, 10, 1);
     gtk_box_pack_start(GTK_BOX(vbox), spin_button, TRUE, TRUE, 0);
 
-    // Create entry widgets for arrival time, burst time, and quantum
-    for (int i = 0; i < 10; i++) {
-        GtkWidget *process_label = gtk_label_new(g_strdup_printf("Process %d:", i + 1));
-        GtkWidget *arrival_entry = gtk_spin_button_new_with_range(0, 100, 1);
-        GtkWidget *burst_entry = gtk_spin_button_new_with_range(1, 100, 1);
-        GtkWidget *process_hbox = gtk_hbox_new(TRUE, 5);
-
-        gtk_box_pack_start(GTK_BOX(process_hbox), process_label, TRUE, TRUE, 0);
-        gtk_box_pack_start(GTK_BOX(process_hbox), arrival_entry, TRUE, TRUE, 0);
-        gtk_box_pack_start(GTK_BOX(process_hbox), burst_entry, TRUE, TRUE, 0);
-        process_entries[i] = process_hbox;
-
-        gtk_box_pack_start(GTK_BOX(vbox), process_entries[i], TRUE, TRUE, 0);
-    }
-
-    // Create a label for quantum
-    GtkWidget *quantum_label = gtk_label_new("Enter time quantum:");
-    gtk_box_pack_start(GTK_BOX(vbox), quantum_label, TRUE, TRUE, 0);
-
-    // Create a spin button for entering the quantum
-    GtkWidget *quantum_spin_button = gtk_spin_button_new_with_range(1, 100, 1);
-    gtk_box_pack_start(GTK_BOX(vbox), quantum_spin_button, TRUE, TRUE, 0);
-
     // Create a button to run scheduling algorithms
     button = gtk_button_new_with_label("Run Scheduling");
     g_signal_connect(button, "clicked", G_CALLBACK(run_scheduling), spin_button);
@@ -115,18 +60,21 @@ int main(int argc, char *argv[]) {
     // Start the GTK main loop
     gtk_main();
 
+    // Free the allocated memory
+    free(AT);
+    free(BT);
+    free(WT);
+    free(TT);
+
     return 0;
 }
 
 // Implement your scheduling algorithms (sjf, fcfs, srtf, roundRobin) here
 // You can use the global variables (n, AT, BT, WT, TT, quantum) to get the user input.
 
-// Note: Ensure that you handle memory allocation and deallocation appropriately to avoid memory leaks.
-
-
-
-void fcfs()
-{
+void fcfs() {
+    // Implementation of FCFS scheduling algorithm
+    {
     int burst=0,cmpl_T;
     float Avg_WT,Avg_TT,Total=0;
     printf("Enter number of the process\n");
@@ -172,9 +120,8 @@ void fcfs()
     printf("Average turn around time is : %f\n",Avg_TT);
 }
 
-
-
 void sjf() {
+    // Implementation of SJF scheduling algorithm
     int burst = 0, completionTime, minBTIndex;
     float Avg_WT, Avg_TT, Total = 0;
 
@@ -224,7 +171,8 @@ void sjf() {
 }
 
 void srtf() {
-    int remainingBT[10], completionTime, time = 0, minBTIndex;
+    // Implementation of SRTF scheduling algorithm
+        int remainingBT[10], completionTime, time = 0, minBTIndex;
     float Avg_WT, Avg_TT, Total_WT = 0, Total_TT = 0;
 
     // Initialize arrays
@@ -285,6 +233,7 @@ void srtf() {
 }
 
 void roundRobin() {
+    // Implementation of Round Robin scheduling algorithm
     int remainingBT[10], time = 0, completionTime = 0;
     float Avg_WT = 0, Avg_TT = 0, Total_WT = 0, Total_TT = 0;
 
